@@ -1,0 +1,1 @@
+scp -r * ens19sle@itchy.cs.umu.se:~/workspace/mapmaker
