@@ -5,22 +5,37 @@ class Navigator:
 
     def computePath(self, robot, dest):
         # Returns a list of coordinate squares
-        path = [dest]
         wave = self.wave(robot, dest)
-        wave.pop()
-        while dest != self.cartographer.getPosition(robot):
-            dest = self.findNeighbor(dest, wave.pop())
-            path.append(dest)
+        path = self.findPath(len(wave), wave, [dest])
+        # If no path is found
+        if path == None:
+            return None
         path.reverse()
+        return path
 
-    def findNeighbor(self, goal, layer):
+    def findPath(self, depth, wave, path):
+        if depth == 0:
+            return path
+        goal = path[-1]
+        neighbors = self.findNeighbors(goal, wave[depth - 1])
+        if len(neighbors) == 0:
+            path.pop()
+            return None
+        for neighbor in neighbors:
+            path.append(neighbor)
+            pathTmp = self.findPath(depth - 1, wave, path)
+            if pathTmp:
+                return pathTmp
+        return None
+
+    def findNeighbors(self, goal, layer):
         neighbors = set()
         for i in range(-1, 2):
             for j in range(-1, 2):
                 if abs(i) + abs(j) != 0:
                     neighbors.add((goal[0] + i, goal[1] + j))
         neighborSet = neighbors.intersection(set(layer))
-        return neighborSet.pop()
+        return list(neighborSet)
 
     def wave(self, robot, dest):
         wave = []
@@ -36,3 +51,4 @@ class Navigator:
 
     def followThePath(self, robot, path):
         pass
+

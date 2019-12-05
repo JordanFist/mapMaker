@@ -1,5 +1,6 @@
 from show_map import ShowMap
 import numpy as np
+from math import floor
 
 
 class Cartographer:
@@ -16,19 +17,19 @@ class Cartographer:
         self.yMin = yMin
         self.yMax = yMax
         self.showMap = ShowMap(self.getHeight(), self.getWidth(), showGUI)
-        self.map = np.array((self.getHeight(), self.getWidth()))
+        self.map = np.ones((self.getHeight(), self.getWidth())) * self.UNKNOWN
 
     def getHeight(self):
         """
         :return: the number of squares in terms of height
         """
-        return (self.yMax - self.yMin) / self.CELL_SIZE
+        return (self.yMax - self.yMin) // self.CELL_SIZE
 
     def getWidth(self):
         """
         :return: the number of squares in terms of width
         """
-        return (self.xMax - self.xMin) / self.CELL_SIZE
+        return (self.xMax - self.xMin) // self.CELL_SIZE
 
     def isOutOfBound(self, row, col):
         return not (0 <= row < self.getHeight() and 0 <= col < self.getWidth())
@@ -46,17 +47,17 @@ class Cartographer:
         return self.map[row][col]
 
     def getPosition(self, robot):
-        col = (robot.getPosition()['X'] - self.xMin) / self.CELL_SIZE
-        row = (self.yMax - robot.getPosition()['Y']) / self.CELL_SIZE
+        col = floor((robot.getPosition()['X'] - self.xMin) / self.CELL_SIZE)
+        row = floor((robot.getPosition()['Y'] - self.yMin) / self.CELL_SIZE)
         return (row, col)
 
     def getNextBorder(self, border, inside):
         nextBorder = []
         for cell in border:
-            row, col = cell[0], cell[1]
             for i in range(-1, 2):
                 for j in range(-1, 2):
-                    if (abs(i) + abs(j) != 0 and not self.isOutOfBound(row + i, col + j)
-                            and cell not in inside and not self.isObstacle(row + i, col + j)):
-                        nextBorder.append(cell)
+                    neighborRow, neighborCol = cell[0] + i, cell[1] + j
+                    if (abs(i) + abs(j) != 0 and not self.isOutOfBound(neighborRow, neighborCol)
+                            and (neighborRow, neighborCol) not in inside and not self.isObstacle(neighborRow, neighborCol)):
+                        nextBorder.append((neighborRow, neighborCol))
         return nextBorder
