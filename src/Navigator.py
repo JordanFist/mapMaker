@@ -39,7 +39,7 @@ class Navigator:
 
     def wave(self, robot, dest):
         wave = []
-        inside = [self.cartographer.getPosition(robot)]
+        inside = [self.cartographer.getGridPosition(robot.getPosition())]
         nextBorder = self.cartographer.getNextBorder(inside, [])
         while dest not in nextBorder and nextBorder != []:
             wave.append(nextBorder)
@@ -48,6 +48,12 @@ class Navigator:
             for layer in wave:
                 nextBorder = list(set(nextBorder) - set(layer))
         return wave
+
+    def convertPath(self, path):
+        newPath = []
+        for square in path:
+            newPath.append(self.cartographer.getRealPosition(square))
+        return newPath
 
     def followThePath(self, robot, path):
         pass

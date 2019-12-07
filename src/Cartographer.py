@@ -6,7 +6,6 @@ from math import floor
 class Cartographer:
 
     def __init__(self, xMin, xMax, yMin, yMax, showGUI):
-        # CELL_SIZE must be between 0 and 1
         self.CELL_SIZE = 1
         self.EMPTY = 0
         self.OCCUPIED = 1
@@ -46,10 +45,15 @@ class Cartographer:
     def getState(self, row, col):
         return self.map[row][col]
 
-    def getPosition(self, robot):
-        col = floor((robot.getPosition()['X'] - self.xMin) / self.CELL_SIZE)
-        row = floor((robot.getPosition()['Y'] - self.yMin) / self.CELL_SIZE)
+    def getGridPosition(self, coord):
+        col = floor((coord['X'] - self.xMin) / self.CELL_SIZE)
+        row = floor((coord['Y'] - self.yMin) / self.CELL_SIZE)
         return (row, col)
+
+    def getRealPosition(self, square):
+        x = (square[0] * self.CELL_SIZE + self.xMin) + self.CELL_SIZE / 2
+        y = (square[1] * self.CELL_SIZE + self.yMin) + self.CELL_SIZE / 2
+        return {'X': x, 'Y': y}
 
     def getNextBorder(self, border, inside):
         nextBorder = []

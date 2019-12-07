@@ -13,7 +13,6 @@ def testComputePath():
     controller = Controller(cartographer)
     navigator = Navigator(controller, cartographer)
     dest = (random.randint(0, xMax - xMin), random.randint(0, yMax - yMin))
-    print(cartographer.getPosition(robot))
     print(dest)
     path = navigator.computePath(robot, dest)
     print(path)
