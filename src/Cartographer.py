@@ -54,10 +54,9 @@ class Cartographer:
     def getNextBorder(self, border, inside):
         nextBorder = []
         for cell in border:
-            for i in range(-1, 2):
-                for j in range(-1, 2):
+            for (i, j) in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                     neighborRow, neighborCol = cell[0] + i, cell[1] + j
-                    if (abs(i) + abs(j) != 0 and not self.isOutOfBound(neighborRow, neighborCol)
+                    if (not self.isOutOfBound(neighborRow, neighborCol)
                             and (neighborRow, neighborCol) not in inside and not self.isObstacle(neighborRow, neighborCol)):
                         nextBorder.append((neighborRow, neighborCol))
         return nextBorder
