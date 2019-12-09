@@ -22,4 +22,5 @@ class PlanningModule:
         borders = []
         borderSquare = self.cartographer.findBorderSquare(cartographer.getGridPosition(robot.getPosition()), set())
         border, extremities = self.cartographer.findBorder(borderSquare)
-        while self.ExtremityInBorders(extremities)    #stop when 2 extremities in borders
+        while self.ExtremityInBorders(extremities):    #stop when 2 extremities in borders
+            pass
