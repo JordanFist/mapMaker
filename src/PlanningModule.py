@@ -11,16 +11,30 @@ class PlanningModule:
         # Needs navigator
         pass
 
-    def ExtremityInBorders(self, extremity, borders):
+    def EndInBorders(self, end, borders):
         for border in borders:
             for square in border:
-                if square == extremity:
+                if square == end:
                     return True
         return False
 
-    def getBorders(self, robot):
-        borders = []
+    def getBorders(self, robot): # check if extremity is none
+        emptyBorders = occupiedBorders = extremities = []
         borderSquare = self.cartographer.findBorderSquare(cartographer.getGridPosition(robot.getPosition()), set())
-        border, extremities = self.cartographer.findBorder(borderSquare)
-        while self.ExtremityInBorders(extremities):    #stop when 2 extremities in borders
-            pass
+        border, ends = self.cartographer.findBorder(borderSquare)
+        borders.append(border)
+        while not (self.EndInBorders(ends[0]) and self.EndInBorders(ends[1])):
+            if self.cartographer.getState(border[0]) == self.cartographer.EMPTY:
+                EmptyBorders.append(border)
+                if not self.EndInBorders(end[0], occupiedBorders):
+                    border, ends = self.cartographer.findBorder(ends[0])
+                elif not self.EndInBorders(end[1], occupiedBorders):
+                    border, ends = self.cartographer.findBorder(ends[1])
+                    
+            
+            else:
+                occupiedBorders.append(border)
+                if not self.EndInBorders(end[0], emptyBorders):
+                    border, ends = self.cartographer.findBorder(ends[0])
+                elif not self.EndInBorders(end[1], emptyBorders):
+                    border, ends = self.cartographer.findBorder(ends[1])

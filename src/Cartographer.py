@@ -89,22 +89,19 @@ class Cartographer:
         return None
 
     def findBorder(self, square):
-        border = []
-        extremities = []
-        squareState = self.getState(square)
+        border = ends = []
         stack = [square]
         while len(stack) != 0:
-            square = stack.pop()
-            border.append(square)
+            border.append(stack.pop())
             for i in range(-1, 2):
                 for j in range(-1, 2):
                     neighbor = (square[0] + i, square[1] + j)
                     if self.isOnBorder(neighbor) and not neighbor in border:
-                        if self.getState(neighbor) == squareState:
-                            stack.append((i, j))
+                        if self.getState(neighbor) == self.getState(square):
+                            stack.append(neighbor)
                         else:
-                            extremities.append(neighbor)
-        return border, extremities
+                            ends.append(neighbor)
+        return border, ends
 
 
 
