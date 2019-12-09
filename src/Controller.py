@@ -7,10 +7,10 @@ from numpy import sign
 class Controller:
 
     def __init__(self, cartographer):
-        self.time = 1
+        self.time = 1  # to review
         self.alpha = 0
         self.v = 0.7
-        self.L = 2
+        self.L = 2  # to review
         self.offset = 0
 
         self.cartographer = cartographer

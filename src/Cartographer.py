@@ -30,20 +30,22 @@ class Cartographer:
         """
         return (self.xMax - self.xMin) // self.CELL_SIZE
 
-    def isOutOfBound(self, row, col):
-        return not (0 <= row < self.getHeight() and 0 <= col < self.getWidth())
+    def isOutOfBound(self, square):
+        return not (0 <= square[0] < self.getHeight() and 0 <= square[1] < self.getWidth())
 
-    def isObstacle(self, row, col):
-        return self.getState(row, col) == self.OCCUPIED
+    def getState(self, square):
+        if self.map[square[0]][square[1]] == 0.5:
+            return self.UNKNOWN
+        elif self.map[square[0]][square[1]] > 0.5:
+            return self.OCCUPIED
+        else:
+            return self.EMPTY
 
     def update(self):
         pass
 
     def getMap(self):
         return self.map
-
-    def getState(self, row, col):
-        return self.map[row][col]
 
     def getGridPosition(self, coord):
         col = floor((coord['X'] - self.xMin) / self.CELL_SIZE)
@@ -59,8 +61,54 @@ class Cartographer:
         nextBorder = []
         for cell in border:
             for (i, j) in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                    neighborRow, neighborCol = cell[0] + i, cell[1] + j
-                    if (not self.isOutOfBound(neighborRow, neighborCol)
-                            and (neighborRow, neighborCol) not in inside and not self.isObstacle(neighborRow, neighborCol)):
+                    neighbor = (cell[0] + i, cell[1] + j)
+                    if not self.isOutOfBound(neighbor) and neighbor not in inside and not self.getState(neighbor) == self.OCCUPIED:
                         nextBorder.append((neighborRow, neighborCol))
         return nextBorder
+
+    def isOnBorder(self, square):
+        if self.getState(square) == self.UNKNOWN:
+            return False
+        for (i, j) in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                neighbor = (square[0] + i, square[1] + j)
+                if self.getState(neighbor) == self.UNKNOWN and not self.isOutOfBound(neighbor):
+                    return True
+        return False
+
+    def findBorderSquare(self, square, acc):
+        if self.isOnBorder(square):
+            return square
+        acc.add(square)
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                neighbor = (square[0] + i, square[1] + j)
+                if not neighbor in acc and not self.isOutOfBound(neighbor):
+                    borderSquare = self.findBorderSquare(neighbor, acc)
+                    if borderSquare:
+                        return borderSquare
+        return None
+
+    def findBorder(self, square):
+        border = []
+        extremities = []
+        squareState = self.getState(square)
+        stack = [square]
+        while len(stack) != 0:
+            square = stack.pop()
+            border.append(square)
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    neighbor = (square[0] + i, square[1] + j)
+                    if self.isOnBorder(neighbor) and not neighbor in border:
+                        if self.getState(neighbor) == squareState:
+                            stack.append((i, j))
+                        else:
+                            extremities.append(neighbor)
+        return border, extremities
+
+
+
+
+
+
+
