@@ -89,7 +89,8 @@ class Cartographer:
         return None
 
     def findBorder(self, square):
-        border = ends = []
+        border = []
+        ends = []
         stack = [square]
         while len(stack) != 0:
             border.append(stack.pop())
