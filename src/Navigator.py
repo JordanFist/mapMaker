@@ -1,10 +1,19 @@
 class Navigator:
+    """
+    This class represents the navigator : its goal is to find a path from the robot to the given destination
+    and feed the controller accordingly
+    """
     def __init__(self, controller, cartographer):
         self.cartographer = cartographer
         self.controller = controller
 
     def computePath(self, robot, dest):
-        # Returns a list of coordinate squares
+        """
+        Find a path from the robot to the given destination using the front wave algorithm
+        :param robot: Robot object
+        :param dest: a square given by the mission planner
+        :return: a list of neighboring squares (Von Neumann), robot position not included
+        """
         wave = self.wave(robot, dest)
         path = self.findPath(len(wave), wave, [dest])
         # If no path is found
@@ -14,6 +23,13 @@ class Navigator:
         return path
 
     def findPath(self, depth, wave, path):
+        """
+        Given a depth "depth" in the wave search, find an relevant neighbor at "deth - 1" to complete the path
+        :param depth: a depth in the wave search (distance in squares from the robot)
+        :param wave: a list of layers (each layer is a list of empty neighboring squares all at the same depth)
+        :param path: the current path from the destination to the given depth
+        :return: a list of neighboring squares
+        """
         if depth == 0:
             return path
         goal = path[-1]
@@ -29,6 +45,12 @@ class Navigator:
         return None
 
     def findNeighbors(self, goal, layer):
+        """
+        Finds the given square's neighbors which belong to the given layer
+        :param goal: a square
+        :param layer: a list of empty neighboring squares (all at the same depth in the wave search)
+        :return: the list of goal's neighbors which belong to layer
+        """
         neighbors = set()
         for i in range(-1, 2):
             for j in range(-1, 2):
@@ -38,18 +60,30 @@ class Navigator:
         return list(neighborSet)
 
     def wave(self, robot, dest):
+        """
+        Find all the layers (lists of empty neighboring squares) from the robot to the destination
+        :param robot: Robot object
+        :param dest: square to reach
+        :return: a list of the layers
+        """
         wave = []
         inside = [self.cartographer.getGridPosition(robot.getPosition())]
-        nextBorder = self.cartographer.getNextBorder(inside, [])
-        while dest not in nextBorder and nextBorder != []:
-            wave.append(nextBorder)
-            inside += nextBorder
-            nextBorder = self.cartographer.getNextBorder(nextBorder, inside)
+        nextLayer = self.cartographer.getNextLayer(inside, [])
+        while dest not in nextLayer and nextLayer != []:
+            wave.append(nextLayer)
+            inside += nextLayer
+            nextLayer = self.cartographer.getNextLayer(nextLayer, inside)
+            # TODO: à quoi ça sert ce for juste en dessous là ?
             for layer in wave:
-                nextBorder = list(set(nextBorder) - set(layer))
+                nextLayer = list(set(nextLayer) - set(layer))
         return wave
 
     def convertPath(self, path):
+        """
+        Convert a grid square path to real positions path
+        :param path: list of squares
+        :return: list of quaternions
+        """
         newPath = []
         for square in path:
             newPath.append(self.cartographer.getRealPosition(square))

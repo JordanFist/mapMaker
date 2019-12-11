@@ -57,14 +57,14 @@ class Cartographer:
         y = (square[1] * self.CELL_SIZE + self.yMin) + self.CELL_SIZE / 2
         return {'X': x, 'Y': y}
 
-    def getNextBorder(self, border, inside):
-        nextBorder = []
-        for cell in border:
+    def getNextLayer(self, layer, inside):
+        nextLayer = []
+        for square in layer:
             for (i, j) in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                    neighbor = (cell[0] + i, cell[1] + j)
+                    neighbor = (square[0] + i, square[1] + j)
                     if not self.isOutOfBound(neighbor) and neighbor not in inside and not self.getState(neighbor) == self.OCCUPIED:
-                        nextBorder.append((neighborRow, neighborCol))
-        return nextBorder
+                        nextLayer.append((neighborRow, neighborCol))
+        return nextLayer
 
     def isOnBorder(self, square):
         if self.getState(square) == self.UNKNOWN:
