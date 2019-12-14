@@ -1,6 +1,7 @@
 from show_map import ShowMap
 import numpy as np
-from math import floor
+from math import floor, cos, sin
+from Computations import pathToObstacle, getDistance
 
 
 class Cartographer:
@@ -10,13 +11,18 @@ class Cartographer:
         self.EMPTY = 0
         self.OCCUPIED = 1
         self.UNKNOWN = -1
+        self.MAXVALUE = 15
+        self.MINVALUE = 0
+        self.EMPTY_THRESHOLD = 6
+        self.OCCUPIED_THRESHOLD = 8
+        self.LASER_MAX = 10
 
         self.xMin = xMin
         self.xMax = xMax
         self.yMin = yMin
         self.yMax = yMax
         self.showMap = ShowMap(self.getHeight(), self.getWidth(), showGUI)
-        self.map = np.ones((self.getHeight(), self.getWidth())) * self.UNKNOWN
+        self.map = np.ones((self.getHeight(), self.getWidth())) * (self.MAXVALUE + self.MINVALUE) // 2
 
     def getHeight(self):
         """
@@ -34,15 +40,38 @@ class Cartographer:
         return not (0 <= square[0] < self.getHeight() and 0 <= square[1] < self.getWidth())
 
     def getState(self, square):
-        if self.map[square[0]][square[1]] == 0.5:
-            return self.UNKNOWN
-        elif self.map[square[0]][square[1]] > 0.5:
+        if self.map[square[0]][square[1]] < self.EMPTY_THRESHOLD:
+            return self.EMPTY
+        elif self.map[square[0]][square[1]] > self.OCCUPIED_THRESHOLD:
             return self.OCCUPIED
         else:
-            return self.EMPTY
+            return self.UNKNOWN
 
-    def update(self):
-        pass
+    def update(self, robot):
+        self.handleLasers(robot)
+        row, col = self.getGridPosition(robot.getPosition())
+        self.showMap.updateMap(self.map, self.MAXVALUE, row, col)
+
+    def handleLasers(self, robot):
+        robotPosition = robot.getPosition()
+        lasers = robot.getLaser()
+        laserAngles = robot.getAngles()
+        obstaclePos = {}
+        for i in range(len(lasers['Echoes'])):
+            obstaclePos['X'] = lasers['Echoes'][i] * cos(laserAngles[i]) + robotPosition['X']
+            obstaclePos['Y'] = lasers['Echoes'][i] * sin(laserAngles[i]) + robotPosition['Y']
+            path = pathToObstacle(self.getGridPosition(robotPosition), self.getGridPosition(obstaclePos))
+            self.HIMMUpdate(path, robot)
+
+    def HIMMUpdate(self, path, robot):
+        for (x, y) in path:
+            realPos = self.getRealPosition((x, y))
+            distanceToRobot = getDistance(robot.getPosition(), realPos)
+            if not self.isOutOfBound((x, y)) and distanceToRobot < self.LASER_MAX:
+                if (x, y) == path[-1]:
+                    self.map[x][y] = min(self.MAXVALUE, self.map[x][y] + 3)
+                else:
+                    self.map[x][y] = max(self.MINVALUE, self.map[x][y] - 1)
 
     def getMap(self):
         return self.map
@@ -103,6 +132,7 @@ class Cartographer:
                         else:
                             ends.append(neighbor)
         return border, ends
+
 
 
 

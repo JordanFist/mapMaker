@@ -81,7 +81,7 @@ class ShowMap(object):
                     # set pixel value
                     self.__image.putpixel((col, row), abs(value * 255 / maxValue - 255))
 
-        # update the plot withe new image
+        # update the plot with new image
         self.__ax.clear()
         self.__implot = self.__ax.imshow(self.__image)
 

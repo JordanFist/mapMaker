@@ -30,6 +30,10 @@ class Robot:
         # HTTPConnection does not want to have http:// in the address apparently, so let's remove it:
         mrds_url = url[len("http://"):]
         self.url = mrds_url
+        self.laser_angles = self.getLaserAngles()
+
+    def getAngles(self):
+        return self.laser_angles
 
     def getHeading(self):
         """Returns the heading angle, in radians, counterclockwise from the x-axis

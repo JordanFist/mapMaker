@@ -1,4 +1,8 @@
 from math import atan2, sqrt
+from bresenham import bresenham
+
+def pathToObstacle(robotSquare, obstacleSquare):
+    return list(bresenham(robotSquare[0], robotSquare[1], obstacleSquare[0], obstacleSquare[1]))
 
 def normalize(V):
     norm = sqrt(V['X']**2 + V['Y']**2)

@@ -1,24 +1,39 @@
 from robot import Robot
-from CurvePath import *
+from Computations import *
 from math import pi
 from numpy import sign
 
 
 class Controller:
+    """
+    This class is able to move the robot, given a path to a destination
+    """
 
     def __init__(self, cartographer):
+        # a new destination is computed every time sec
         self.time = 1  # to review
         self.alpha = 0
         self.v = 0.7
+        # lookahead distance
         self.L = 2  # to review
         self.offset = 0
 
         self.cartographer = cartographer
 
     def isObstacle(self):
+        """
+        If an obstacle is encountered, the robot is stopped
+        :return:
+        """
         pass
         
     def moveOnce(self, robot, destination):
+        """
+        Move the robot to a new destination
+        :param robot: Robot object
+        :param destination: quaternion
+        :return:
+        """
         r = getRadius(robot.getPosition(), destination, robot.getHeading())
         robot.setMotion(self.v, sign(self.alpha) * self.v / r)
         time.sleep(self.time)
