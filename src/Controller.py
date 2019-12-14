@@ -32,7 +32,6 @@ class Controller:
         Move the robot to a new destination
         :param robot: Robot object
         :param destination: quaternion
-        :return:
         """
         r = getRadius(robot.getPosition(), destination, robot.getHeading())
         robot.setMotion(self.v, sign(self.alpha) * self.v / r)
@@ -42,6 +41,12 @@ class Controller:
         return 180 * alpha / pi
        
     def getNextPoint(self, robot, path):
+        """
+        Computes the next destination in the path
+        :param robot: Robot object
+        :param path: list of quaternions
+        :return: the destination (quaternion)
+        """
         for i in range(offset, len(path)):
             d = getDistance(robot.getPosition(), path[i])
             if (d >= self.L):
@@ -54,6 +59,11 @@ class Controller:
         return path[-1]
       
     def move(self, robot, path):
+        """
+        Moves the robot following a given path
+        :param robot: Robot object
+        :param path: list of quaternion
+        """
         nextPoint = self.getNextPoint(robot, path)
         while (nextPoint != path[-1]):
             nextPoint = self.getNextPoint(robot, path)

@@ -5,6 +5,10 @@ from Computations import pathToObstacle, getDistance
 
 
 class Cartographer:
+    """
+    This class stores and updates the internal representation of the environment
+    and serves as an interface to get information on the map
+    """
 
     def __init__(self, xMin, xMax, yMin, yMax, showGUI):
         self.CELL_SIZE = 1
@@ -37,9 +41,18 @@ class Cartographer:
         return (self.xMax - self.xMin) // self.CELL_SIZE
 
     def isOutOfBound(self, square):
+        """
+        :param square: a pair
+        :return: True iff the given square is outside the grid's limits
+        """
         return not (0 <= square[0] < self.getHeight() and 0 <= square[1] < self.getWidth())
 
     def getState(self, square):
+        """
+        Given a square, returns one of these states : EMPTY, OCCUPIED or UNKNOWN
+        :param square: a pair
+        :return: the state of the square
+        """
         if self.map[square[0]][square[1]] < self.EMPTY_THRESHOLD:
             return self.EMPTY
         elif self.map[square[0]][square[1]] > self.OCCUPIED_THRESHOLD:
@@ -48,15 +61,24 @@ class Cartographer:
             return self.UNKNOWN
 
     def update(self, robot):
+        """
+        Updates the map representation
+        :param robot: Robot object
+        """
         self.handleLasers(robot)
         row, col = self.getGridPosition(robot.getPosition())
         self.showMap.updateMap(self.map, self.MAXVALUE, row, col)
 
     def handleLasers(self, robot):
+        """
+        Uses the laser scanners to detect obstacles and updates the map accordingly
+        :param robot: Robot object
+        """
         robotPosition = robot.getPosition()
         lasers = robot.getLaser()
         laserAngles = robot.getAngles()
         obstaclePos = {}
+        # Find a potential obstacle for each laser
         for i in range(len(lasers['Echoes'])):
             obstaclePos['X'] = lasers['Echoes'][i] * cos(laserAngles[i]) + robotPosition['X']
             obstaclePos['Y'] = lasers['Echoes'][i] * sin(laserAngles[i]) + robotPosition['Y']
@@ -64,9 +86,15 @@ class Cartographer:
             self.HIMMUpdate(path, robot)
 
     def HIMMUpdate(self, path, robot):
+        """
+        Given a path from the robot to a potential obstacle, updates the map using HIMM method
+        :param path: a list of pairs, starting from the robot's position
+        :param robot: Robot object
+        """
         for (x, y) in path:
             realPos = self.getRealPosition((x, y))
             distanceToRobot = getDistance(robot.getPosition(), realPos)
+            # Do not update beyond the LASER_MAX distance
             if not self.isOutOfBound((x, y)) and distanceToRobot < self.LASER_MAX:
                 if (x, y) == path[-1]:
                     self.map[x][y] = min(self.MAXVALUE, self.map[x][y] + 3)
@@ -77,16 +105,31 @@ class Cartographer:
         return self.map
 
     def getGridPosition(self, coord):
+        """
+        :param coord: a quaternion
+        :return: the grid's square (pair) corresponding to coord
+        """
         col = floor((coord['X'] - self.xMin) / self.CELL_SIZE)
         row = floor((coord['Y'] - self.yMin) / self.CELL_SIZE)
         return (row, col)
 
     def getRealPosition(self, square):
+        """
+        :param square: a pair (grid's position)
+        :return: the "real" position (quaternion) corresponding to square
+        """
         x = (square[0] * self.CELL_SIZE + self.xMin) + self.CELL_SIZE / 2
         y = (square[1] * self.CELL_SIZE + self.yMin) + self.CELL_SIZE / 2
         return {'X': x, 'Y': y}
 
     def getNextLayer(self, layer, inside):
+        """
+        Given a layer (depth d) and all the squares already visited,
+        computes the next layer (depth d+1) in the wave search
+        :param layer: a list of squares (all at the same depth in the wave search)
+        :param inside: a list of squares (that are part of a depth < d layer)
+        :return: the list of squares corresponding to the next layer
+        """
         nextLayer = []
         for square in layer:
             for (i, j) in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
@@ -96,6 +139,11 @@ class Cartographer:
         return nextLayer
 
     def isOnBorder(self, square):
+        """
+        Decides whether a given square belongs to the border between known/unknown or not
+        :param square: a pair
+        :return: True iff square belongs to the border
+        """
         if self.getState(square) == self.UNKNOWN:
             return False
         for (i, j) in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
@@ -104,7 +152,13 @@ class Cartographer:
                     return True
         return False
 
-    def findBorderSquare(self, square, acc):
+    def findBorderSquare(self, square, acc=set()):
+        """
+        Runs until a square belonging to the border between known/unknown is found
+        :param square: a pair
+        :param acc: the set of already visited squares
+        :return: a square belonging to the border if such square exists, otherwise None
+        """
         if self.isOnBorder(square):
             return square
         acc.add(square)
@@ -118,6 +172,11 @@ class Cartographer:
         return None
 
     def findBorder(self, square):
+        """
+        Given a square, finds all the squares that belongs to the same 1 state border (either all empty or all occupied)
+        :param square: a pair
+        :return: the border (list of squares) associated to square, and squares belonging to the neighboring borders
+        """
         border = []
         ends = []
         stack = [square]
@@ -132,11 +191,3 @@ class Cartographer:
                         else:
                             ends.append(neighbor)
         return border, ends
-
-
-
-
-
-
-
-

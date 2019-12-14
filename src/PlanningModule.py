@@ -57,7 +57,7 @@ class PlanningModule:
         """
         emptyBorders = []
         occupiedBorders = []
-        borderSquare = self.cartographer.findBorderSquare(cartographer.getGridPosition(robot.getPosition()), set())
+        borderSquare = self.cartographer.findBorderSquare(cartographer.getGridPosition(robot.getPosition()))
         border, ends = self.cartographer.findBorder(borderSquare)
         # Particular case in which all the border squares have the same state (empty or occupied)
         if len(ends) == 0:
