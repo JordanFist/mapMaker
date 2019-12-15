@@ -29,7 +29,8 @@ def testPlanningModule():
     plt.plot(pos[1], pos[0], 'rs', markersize=6)
     plt.show()
 
-
+def passed():
+    print(__file__, '\x1b[6;30;42m' + 'Success!' + '\x1b[0m')
 
 if __name__ == "__main__":
     testPlanningModule()

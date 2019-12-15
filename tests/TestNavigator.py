@@ -17,6 +17,8 @@ def testComputePath():
     path = navigator.computePath(robot, dest)
     print(path)
 
+def passed():
+    print(__file__, '\x1b[6;30;42m' + 'Success!' + '\x1b[0m')
 
 if __name__ == "__main__":
     testComputePath()
