@@ -41,7 +41,8 @@ class Robot:
         to pi, then from -pi back to 0 for a complete circuit."""
         pose = self._getPose()['Pose']['Orientation']
         heading = quaternion.heading(pose)
-        return atan2(heading["Y"], heading["X"])
+        return heading
+        #return atan2(heading["Y"], heading["X"])
 
     def getPosition(self):
         """Returns the XY position as a two-element list"""

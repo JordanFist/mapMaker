@@ -73,9 +73,8 @@ class Navigator:
             wave.append(nextLayer)
             inside += nextLayer
             nextLayer = self.cartographer.getNextLayer(nextLayer, inside)
-            # TODO: à quoi ça sert ce for juste en dessous là ?
-            for layer in wave:
-                nextLayer = list(set(nextLayer) - set(layer))
+            # remove redundant elements
+            nextLayer = list(set(nextLayer))
         return wave
 
     def convertPath(self, path):
@@ -89,6 +88,7 @@ class Navigator:
             newPath.append(self.cartographer.getRealPosition(square))
         return newPath
 
-    def followThePath(self, robot, path):
-        pass
-
+    def followThePath(self, robot, dest):
+        path = self.computePath(robot, dest)
+        path = self.convertPath(path)
+        self.controller.move(robot, path)

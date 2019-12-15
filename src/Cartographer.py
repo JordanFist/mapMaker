@@ -83,9 +83,9 @@ class Cartographer:
             obstaclePos['X'] = lasers['Echoes'][i] * cos(laserAngles[i]) + robotPosition['X']
             obstaclePos['Y'] = lasers['Echoes'][i] * sin(laserAngles[i]) + robotPosition['Y']
             path = pathToObstacle(self.getGridPosition(robotPosition), self.getGridPosition(obstaclePos))
-            self.HIMMUpdate(path, robot)
+            self.HIMMUpdate(path, robotPosition)
 
-    def HIMMUpdate(self, path, robot):
+    def HIMMUpdate(self, path, robotPosition):
         """
         Given a path from the robot to a potential obstacle, updates the map using HIMM method
         :param path: a list of pairs, starting from the robot's position
@@ -93,7 +93,7 @@ class Cartographer:
         """
         for (x, y) in path:
             realPos = self.getRealPosition((x, y))
-            distanceToRobot = getDistance(robot.getPosition(), realPos)
+            distanceToRobot = getDistance(robotPosition, realPos)
             # Do not update beyond the LASER_MAX distance
             if not self.isOutOfBound((x, y)) and distanceToRobot < self.LASER_MAX:
                 if (x, y) == path[-1]:
@@ -135,7 +135,7 @@ class Cartographer:
             for (i, j) in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                     neighbor = (square[0] + i, square[1] + j)
                     if not self.isOutOfBound(neighbor) and neighbor not in inside and not self.getState(neighbor) == self.OCCUPIED:
-                        nextLayer.append((neighborRow, neighborCol))
+                        nextLayer.append(neighbor)
         return nextLayer
 
     def isOnBorder(self, square):
@@ -181,13 +181,16 @@ class Cartographer:
         ends = []
         stack = [square]
         while len(stack) != 0:
-            border.append(stack.pop())
-            for i in range(-1, 2):
-                for j in range(-1, 2):
-                    neighbor = (square[0] + i, square[1] + j)
-                    if self.isOnBorder(neighbor) and not neighbor in border:
-                        if self.getState(neighbor) == self.getState(square):
-                            stack.append(neighbor)
-                        else:
-                            ends.append(neighbor)
+            square = stack.pop()
+            if square not in border:
+                border.append(square)
+                for i in range(-1, 2):
+                    for j in range(-1, 2):
+                        neighbor = (square[0] + i, square[1] + j)
+                        if self.isOnBorder(neighbor) and neighbor not in border:
+                            if self.getState(neighbor) == self.getState(square):
+                                stack.append(neighbor)
+                            else:
+                                ends.append(neighbor)
+        ends = list(set(ends))
         return border, ends

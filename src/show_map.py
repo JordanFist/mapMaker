@@ -54,6 +54,9 @@ class ShowMap(object):
         saveMap(self.__fig, self.mapName)
         self.start_time = time.time()
 
+    def getImage(self):
+        return self.__image
+
     def updateMap(self, grid, maxValue, robot_row, robot_col):
         """
         Creates a new BufferedImage from a grid with integer values between 0 - maxVal,

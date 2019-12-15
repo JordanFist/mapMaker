@@ -2,6 +2,7 @@ from robot import Robot
 from Computations import *
 from math import pi
 from numpy import sign
+import time
 
 
 class Controller:
@@ -17,6 +18,8 @@ class Controller:
         # lookahead distance
         self.L = 2  # to review
         self.offset = 0
+        self.DISTANCE_UPDATE = 5
+        self.distanceTravelled = 0
 
         self.cartographer = cartographer
 
@@ -47,7 +50,7 @@ class Controller:
         :param path: list of quaternions
         :return: the destination (quaternion)
         """
-        for i in range(offset, len(path)):
+        for i in range(self.offset, len(path)):
             d = getDistance(robot.getPosition(), path[i])
             if (d >= self.L):
                 self.offset = i
@@ -69,5 +72,12 @@ class Controller:
             nextPoint = self.getNextPoint(robot, path)
             self.alpha = getAlpha(robot.getPosition(), nextPoint, robot.getHeading())
             self.moveOnce(robot, nextPoint)
+            self.checkDistanceTravelled()
         self.moveOnce(robot, nextPoint)
         robot.setMotion(0, 0)
+
+    def checkDistanceTravelled(self):
+        self.distanceTravelled += self.L
+        if self.distanceTravelled >= self.DISTANCE_UPDATE:
+            self.cartographer.update()
+            self.distanceTravelled = 0

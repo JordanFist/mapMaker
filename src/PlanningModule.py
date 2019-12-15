@@ -1,3 +1,5 @@
+from math import sqrt
+
 class PlanningModule:
     """
     This class represents the mission planner : it picks a destination using the frontier based exploration algorithm
@@ -7,6 +9,8 @@ class PlanningModule:
     def __init__(self, cartographer, navigator, controller):
         self.cartographer = cartographer
         self.navigator = navigator
+        self.controller = controller
+        self.oldDestination = None
     
     @staticmethod
     def getDistanceSquares(s, t):
@@ -28,20 +32,21 @@ class PlanningModule:
             for square in border:
                 xSum += square[0]
                 ySum += square[1]
-            centroids.append((xSum // len(maxLenBorder), ySum // len(maxLenBorder)))
+            centroids.append((xSum // len(border), ySum // len(border)))
         # Pick the closest centroid to the robot
         closestCentroid = centroids[0]
         for centroid in centroids:
-            if getDistanceSquares(closestCentroid, robotPosition) < getDistanceSquares(centroid, robotPosition):
+            if self.getDistanceSquares(closestCentroid, robotPosition) < self.getDistanceSquares(centroid, robotPosition):
                 closestCentroid = centroid
         return closestCentroid
 
     def EndInBorders(self, end, borders):
         """
-        Decides whether end belongs to one of the borders given
+        If one of the ends' square belongs to a non visited border, returns it
+        Otherwise returns None
         :param end: a square
         :param borders: a list of borders
-        :return: True iff end in one of the borders
+        :return: a square if not in borders otherwise None
         """
         for border in borders:
             if end in border:
@@ -57,25 +62,35 @@ class PlanningModule:
         """
         emptyBorders = []
         occupiedBorders = []
-        borderSquare = self.cartographer.findBorderSquare(cartographer.getGridPosition(robot.getPosition()))
-        border, ends = self.cartographer.findBorder(borderSquare)
-        # Particular case in which all the border squares have the same state (empty or occupied)
-        if len(ends) == 0:
-            return [border]
-        # Assuming a border has 2 neighboring borders, stop when the 2 neighbors have already been visited
-        while not (self.EndInBorders(ends[0], emptyBorders + occupiedBorders) and self.EndInBorders(ends[1], emptyBorders + occupiedBorders)):
-            if self.cartographer.getState(border[0]) == self.cartographer.EMPTY:
-                emptyBorders.append(border)
-            else:
-                occupiedBorders.append(border)
+        toVisit = []
 
-            # Check one of the neighboring border (if not already visited)
-            if not self.EndInBorders(end[0], emptyBorders + occupiedBorders):
-                border, ends = self.cartographer.findBorder(ends[0])
-            elif not self.EndInBorders(end[1], emptyBorders + occupiedBorders):
-                border, ends = self.cartographer.findBorder(ends[1])
+        borderSquare = self.cartographer.findBorderSquare(self.cartographer.getGridPosition(robot.getPosition()))
+        border, ends = self.cartographer.findBorder(borderSquare)
+        if self.cartographer.getState(border[0]) == self.cartographer.EMPTY:
+            emptyBorders.append(border)
+        else:
+            occupiedBorders.append(border)
+        toVisit += ends
+        # Particular case in which all the border squares have the same state (empty or occupied)
+        if len(toVisit) == 0:
+            return [border]
+
+        while len(toVisit) != 0:
+            end = toVisit.pop()
+            if not self.EndInBorders(end, emptyBorders + occupiedBorders):
+                border, ends = self.cartographer.findBorder(end)
+                toVisit += ends
+                if self.cartographer.getState(border[0]) == self.cartographer.EMPTY:
+                    emptyBorders.append(border)
+                else:
+                    occupiedBorders.append(border)
         return emptyBorders
 
     def move(self, robot):
-        # Needs navigator
-        pass
+        destination = self.pickDestination(robot)
+        print(destination)
+        if destination == self.oldDestination:
+            return False
+        self.navigator.followThePath(robot, destination)
+        self.oldDestination = destination
+        return True
