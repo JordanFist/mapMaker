@@ -8,7 +8,8 @@ class Navigator:
     def __init__(self, controller, cartographer):
         self.cartographer = cartographer
         self.controller = controller
-        self.TOLERANCE = 5
+        self.TOLERANCE = 2
+        self.SEGMENT_LENGTH = 40
 
     def computePath(self, robot, dest):
         """
@@ -20,7 +21,7 @@ class Navigator:
         wave = self.wave(robot, dest)
         path = self.findPath(len(wave), wave, [dest])
         # If no path is found
-        if path == None:
+        if not path:
             return None
         path.reverse()
         return path
@@ -92,15 +93,44 @@ class Navigator:
         return newPath
 
     def reachedDestination(self, robot, dest):
+        """
+        Decides whether the robot is close enough to its destination (according to the tolerance attribute)
+        :param robot: Robot object
+        :param dest: square to reach
+        :return: True iff the robot is close enough
+        """
         return getDistance(robot.getPosition(), self.cartographer.getRealPosition(dest)) < self.TOLERANCE
 
     def followThePath(self, robot, dest):
+        """
+        Compute a path between the robot and the destination and make sure the robot reach it
+        :param robot: Robot object
+        :param dest: square to reach
+        """
+        # If the robot has already reached the destination, a new destination needs to be computed
+        if self.reachedDestination(robot, dest):
+            print("reached")
+            self.controller.wander(robot)
+            return
+
+        path = self.computePath(robot, dest)
+        if not path:
+            print("no path")
+            self.controller.wander(robot)
+            return
+        self.cartographer.showMap.blue_points = path
+        path = self.convertPath(path)
+
+        offset = 0
         while not self.reachedDestination(robot, dest) \
-                and self.cartographer.getState(dest) != self.cartographer.OCCUPIED:
-            path = self.computePath(robot, dest)
-            if not path:
-                break
-            path = self.convertPath(path)
-            path = path[:6]
+                and self.cartographer.getState(dest) != self.cartographer.OCCUPIED \
+                and offset < len(path):
+            # Divide the path in segments
+            if offset + self.SEGMENT_LENGTH <= len(path):
+                path = path[offset:offset + self.SEGMENT_LENGTH]
+            else:
+                path = path[offset:]
+            offset += self.SEGMENT_LENGTH
             if not self.controller.move(robot, path):
                 self.controller.wander(robot)
+                self.followThePath(robot, dest)

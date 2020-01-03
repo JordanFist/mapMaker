@@ -1,5 +1,4 @@
 from math import sqrt
-from random import choice
 
 
 class PlanningModule:
@@ -12,8 +11,6 @@ class PlanningModule:
         self.cartographer = cartographer
         self.navigator = navigator
         self.controller = controller
-        self.oldDestination = None
-        self.attempt = 0
     
     @staticmethod
     def getDistanceSquares(s, t):
@@ -38,17 +35,14 @@ class PlanningModule:
                 xSum += square[0]
                 ySum += square[1]
             centroids.append((xSum // len(border), ySum // len(border)))
-
-        #self.cartographer.showMap.yellow_points = centroids
-
-        # Pick the closest centroid to the robot
+        self.cartographer.showMap.yellow_points = centroids
+        # Pick the closest centroid to the robot that is not an obstacle
         closestCentroid = centroids[0]
         for centroid in centroids:
-            if self.getDistanceSquares(centroid, robotPosition) < self.getDistanceSquares(closestCentroid, robotPosition):
-                if self.cartographer.getState(centroid) != self.cartographer.OCCUPIED:
+            dist = self.getDistanceSquares(centroid, robotPosition)
+            if dist < self.getDistanceSquares(closestCentroid, robotPosition) \
+                    and self.cartographer.getState(centroid) != self.cartographer.OCCUPIED:
                     closestCentroid = centroid
-        # if self.cartographer.getState(closestCentroid) == self.cartographer.OCCUPIED:
-        #     return self.oldDestination
         return closestCentroid
 
     def EndInBorders(self, end, borders):
@@ -72,55 +66,30 @@ class PlanningModule:
         emptyBorders = []
         occupiedBorders = []
         toVisit = []
+        alreadyVisited = []
 
-        borderSquare = self.cartographer.findBorderSquare(self.cartographer.getGridPosition(robot.getPosition()))
-        if not borderSquare:
-            print("pas de border square")
-            return []
-        border, ends = self.cartographer.findBorder(borderSquare)
-        if self.cartographer.getState(border[0]) == self.cartographer.EMPTY:
-            emptyBorders.append(border)
-        else:
-            occupiedBorders.append(border)
-        toVisit += ends
-        # Particular case in which all the border squares have the same state (empty or occupied)
-        if len(toVisit) == 0:
-            return [border]
+        for row in range(self.cartographer.getHeight()):
+            for col in range(self.cartographer.getWidth()):
+                if self.cartographer.isOnBorder((row, col)) and not (row, col) in alreadyVisited \
+                        and self.cartographer.getState((row, col)) != self.cartographer.OCCUPIED:
+                    toVisit.append((row, col))
 
-        while len(toVisit) != 0:
-            end = toVisit.pop()
-            if not self.EndInBorders(end, emptyBorders + occupiedBorders):
-                border, ends = self.cartographer.findBorder(end)
-                toVisit += ends
-                if self.cartographer.getState(border[0]) == self.cartographer.EMPTY:
-                    emptyBorders.append(border)
-                else:
-                    occupiedBorders.append(border)
-        self.cartographer.showMap.blue_points = []
-        self.cartographer.showMap.green_points = []
-        for border in emptyBorders:
-            self.cartographer.showMap.green_points += border
-        for border in occupiedBorders:
-            self.cartographer.showMap.blue_points += border
+                while len(toVisit) != 0:
+                    square = toVisit.pop()
+                    if not self.EndInBorders(square, emptyBorders + occupiedBorders):
+                        border, ends = self.cartographer.findBorder(square)
+                        toVisit += ends
+                        if self.cartographer.getState(square) == self.cartographer.EMPTY:
+                            emptyBorders.append(border)
+                            alreadyVisited += border
+                        else:
+                            occupiedBorders.append(border)
+        self.cartographer.showMap.green_points = alreadyVisited
         return emptyBorders
 
     def move(self, robot):
         destination = self.pickDestination(robot)
         if not destination:
             return False
-        self.cartographer.showMap.yellow_points = [destination]
-        # if destination == self.oldDestination:
-        if destination == self.oldDestination:
-            print("same destination")
-            self.attempt += 1
-            if self.attempt == 3:
-                self.cartographer.map[destination[0]][destination[1]] = 15
-                self.attempt = 0
-        else:
-            self.attempt = 0
-        if self.navigator.reachedDestination(robot, destination):
-            self.controller.wander(robot)
-        else:
-            self.navigator.followThePath(robot, destination)
-            self.oldDestination = destination
+        self.navigator.followThePath(robot, destination)
         return True

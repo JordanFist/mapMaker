@@ -12,20 +12,18 @@ class Controller:
     """
 
     def __init__(self, cartographer):
-        self.waypoints = []
         # a new destination is computed every time sec
-        self.time = 1  # to review
+        self.time = 1
         self.alpha = 0
         self.v = 1
         # lookahead distance
-        self.L = 2.5  # to review
+        self.L = 4
         self.offset = 0
-        self.DISTANCE_UPDATE = 5
+        self.DISTANCE_UPDATE = 2
         self.distanceTravelled = 0
         self.LASER_ANGLE = 5
         self.OBSTACLE_MAX_DIST = 2
-        self.WANDERING_MIN = int(4 / self.OBSTACLE_MAX_DIST)
-        self.WANDERING_MAX = int(10 / self.OBSTACLE_MAX_DIST)
+        self.WANDERING_DISTANCE = 6
 
         self.cartographer = cartographer
 
@@ -51,9 +49,7 @@ class Controller:
         r = getRadius(robot.getPosition(), destination, robot.getHeading())
         robot.setMotion(self.v, sign(self.alpha) * self.v / r)
         time.sleep(self.time)
-
-    def rad2deg(self, alpha):
-        return 180 * alpha / pi
+        robot.setMotion(0, 0)
 
     def getNextPoint(self, robot, path):
         """
@@ -67,26 +63,21 @@ class Controller:
             d = getDistance(robot.getPosition(), path[i])
             if (d >= self.L) and i > self.offset:
                 self.offset = i - 1
-                try:
-                    A, B = getLineCircleIntersection(robot.getPosition(), self.L, path[i], path[i - 1])
-                except:
-                    print(robot.getPosition(), self.L, path[i], path[i - 1])
-                    print(path)
-                    print(self.offset)
-                    print(self.waypoints)
-                    return None
+                A, B = getLineCircleIntersection(robot.getPosition(), self.L, path[i], path[i - 1])
             elif (d >= self.L) and i == self.offset:
-                self.offset = 0
                 A, B = getLineCircleIntersection(robot.getPosition(), self.L, path[i], robot.getPosition())
             if (A, B) != ({}, {}):
                 if getDistance(A, path[i]) < getDistance(B, path[i]):
-                    self.waypoints.append(A)
                     return A
                 else:
-                    self.waypoints.append(B)
                     return B
         return path[-1]
-      
+
+    def orientToward(self, robot, pos):
+        angle = getAlpha(robot.getPosition(), pos, robot.getHeading()) / 2
+        robot.setMotion(0, angle)
+        time.sleep(1)
+
     def move(self, robot, path):
         """
         Moves the robot following a given path
@@ -94,7 +85,8 @@ class Controller:
         :param path: list of quaternion
         :return False iff something went wrong (an obstacle was on the way)
         """
-        self.waypoints = []
+        print("follow path")
+        self.orientToward(robot, path[0])
         self.offset = 0
         nextPoint = self.getNextPoint(robot, path)
         while (nextPoint != path[-1]):
@@ -103,29 +95,37 @@ class Controller:
             self.moveOnce(robot, nextPoint)
             if self.checkObstacle(robot):
                 return False
-            self.checkDistanceTravelled(robot)
+            self.checkDistanceTravelled(robot, self.time * self.v)
         self.moveOnce(robot, nextPoint)
-        robot.setMotion(0, 0)
         return True
 
-    def checkDistanceTravelled(self, robot):
-        self.distanceTravelled += self.L
+    def checkDistanceTravelled(self, robot, dist):
+        """
+        Called each time a new destination is computed, this function updates the map if the robot has moved enough
+        :param robot: Robot object
+        """
+        self.distanceTravelled += dist
         if self.distanceTravelled >= self.DISTANCE_UPDATE:
             self.cartographer.update(robot)
             self.distanceTravelled = 0
 
     def wander(self, robot):
+        """
+        Random behaviour, avoiding obstacles
+        :param robot: Robot object
+        """
+        print("wandering")
         run = True
         while run:
             robot.setMotion(0, 2 * pi * random())
             time.sleep(1)
             if not self.checkObstacle(robot):
                 run = False
-                for _ in range(self.WANDERING_MIN,
-                               int(random() * (self.WANDERING_MAX - self.WANDERING_MIN) + self.WANDERING_MIN)):
-                    robot.setMotion(self.OBSTACLE_MAX_DIST, 0)
-                    time.sleep(1)
-                    self.cartographer.update(robot)
-                    if self.checkObstacle(robot):
-                        run = True
+                for _ in range(self.WANDERING_DISTANCE):
+                    robot.setMotion(self.OBSTACLE_MAX_DIST * 2, 0)
+                    time.sleep(0.5)
+                    robot.setMotion(0, 0)
+                    self.checkDistanceTravelled(robot, self.OBSTACLE_MAX_DIST)
+                    robotPos = self.cartographer.getGridPosition(robot.getPosition())
+                    if self.checkObstacle(robot) or self.cartographer.isOutOfBound(robotPos):
                         break

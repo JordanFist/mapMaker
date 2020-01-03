@@ -104,11 +104,11 @@ class ShowMap(object):
 
         # plot remarkable points
         for point in self.green_points:
-            self.__ax.plot(point[1], point[0], 'gs', markersize=self.__robot_size)
+            self.__ax.plot(point[1], point[0], 'gs', markersize=2)
         for point in self.blue_points:
-            self.__ax.plot(point[1], point[0], 'bs', markersize=self.__robot_size)
+            self.__ax.plot(point[1], point[0], 'bs', markersize=2)
         for point in self.yellow_points:
-            self.__ax.plot(point[1], point[0], 'ys', markersize=self.__robot_size)
+            self.__ax.plot(point[1], point[0], 'ys', markersize=2)
 
         # draw new figure
         self.__fig.canvas.draw()

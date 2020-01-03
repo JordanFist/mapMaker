@@ -11,7 +11,7 @@ class Cartographer:
     """
 
     def __init__(self, xMin, xMax, yMin, yMax, showGUI):
-        self.CELL_SIZE = 1
+        self.CELL_SIZE = 0.4
         self.EMPTY = 0
         self.OCCUPIED = 1
         self.UNKNOWN = -1
@@ -19,8 +19,8 @@ class Cartographer:
         self.MINVALUE = 0
         self.EMPTY_THRESHOLD = 6
         self.OCCUPIED_THRESHOLD = 8
-        self.LASER_MAX_DISTANCE = 12
-        self.LASER_MAX_ANGLE = 20
+        self.LASER_MAX_DISTANCE = 8
+        self.LASER_MAX_ANGLE = 30
 
         self.xMin = xMin
         self.xMax = xMax
@@ -33,13 +33,13 @@ class Cartographer:
         """
         :return: the number of squares in terms of height
         """
-        return (self.yMax - self.yMin) // self.CELL_SIZE
+        return int((self.yMax - self.yMin) / self.CELL_SIZE)
 
     def getWidth(self):
         """
         :return: the number of squares in terms of width
         """
-        return (self.xMax - self.xMin) // self.CELL_SIZE
+        return int((self.xMax - self.xMin) / self.CELL_SIZE)
 
     def isOutOfBound(self, square):
         """
@@ -100,7 +100,9 @@ class Cartographer:
             realPos = self.getRealPosition((x, y))
             distanceToRobot = getDistance(robotPosition, realPos)
             # Do not update beyond the LASER_MAX distance
-            if not self.isOutOfBound((x, y)) and distanceToRobot < self.LASER_MAX_DISTANCE:
+            if distanceToRobot > self.LASER_MAX_DISTANCE:
+                break
+            if not self.isOutOfBound((x, y)):
                 if (x, y) == path[-1]:
                     self.map[x][y] = min(self.MAXVALUE, self.map[x][y] + 3)
                     # Computation of the growth operator
@@ -113,10 +115,6 @@ class Cartographer:
                     self.map[x][y] = min(self.MAXVALUE, sum)
                 else:
                     self.map[x][y] = max(self.MINVALUE, self.map[x][y] - 1)
-
-
-
-
 
     def getMap(self):
         return self.map
@@ -168,32 +166,6 @@ class Cartographer:
                 if not self.isOutOfBound(neighbor) and self.getState(neighbor) == self.UNKNOWN:
                     return True
         return False
-
-    def findBorderSquare2(self, square, acc=set()):
-        """
-        Runs until a square belonging to the border between known/unknown is found
-        :param square: a pair
-        :param acc: the set of already visited squares
-        :return: a square belonging to the border if such square exists, otherwise None
-        """
-        if self.isOnBorder(square):
-            return square
-        acc.add(square)
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                neighbor = (square[0] + i, square[1] + j)
-                if not neighbor in acc and not self.isOutOfBound(neighbor):
-                    borderSquare = self.findBorderSquare(neighbor, acc)
-                    if borderSquare:
-                        return borderSquare
-        return None
-
-    def findBorderSquare(self, square):
-        for i in range(len(self.map)):
-            for j in range(len(self.map)):
-                if self.isOnBorder((i, j)) and self.getState((i, j)) != self.OCCUPIED:
-                    return (i, j)
-        return None
 
     def findBorder(self, square):
         """
