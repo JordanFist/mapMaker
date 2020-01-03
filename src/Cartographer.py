@@ -1,6 +1,6 @@
 from show_map import ShowMap
 import numpy as np
-from math import floor, cos, sin
+from math import floor, cos, sin, atan2
 from Computations import pathToObstacle, getDistance
 
 
@@ -19,7 +19,8 @@ class Cartographer:
         self.MINVALUE = 0
         self.EMPTY_THRESHOLD = 6
         self.OCCUPIED_THRESHOLD = 8
-        self.LASER_MAX = 10
+        self.LASER_MAX_DISTANCE = 12
+        self.LASER_MAX_ANGLE = 20
 
         self.xMin = xMin
         self.xMax = xMax
@@ -75,13 +76,16 @@ class Cartographer:
         :param robot: Robot object
         """
         robotPosition = robot.getPosition()
+        robotHeading = robot.getHeading()
+        robotAngle = atan2(robotHeading["Y"], robotHeading["X"])
         lasers = robot.getLaser()
         laserAngles = robot.getAngles()
         obstaclePos = {}
         # Find a potential obstacle for each laser
-        for i in range(len(lasers['Echoes'])):
-            obstaclePos['X'] = lasers['Echoes'][i] * cos(laserAngles[i]) + robotPosition['X']
-            obstaclePos['Y'] = lasers['Echoes'][i] * sin(laserAngles[i]) + robotPosition['Y']
+        for i in range(len(lasers['Echoes']) // 2 - self.LASER_MAX_ANGLE,
+                       len(lasers['Echoes']) // 2 + self.LASER_MAX_ANGLE):
+            obstaclePos['X'] = lasers['Echoes'][i] * cos(laserAngles[i] + robotAngle) + robotPosition['X']
+            obstaclePos['Y'] = lasers['Echoes'][i] * sin(laserAngles[i] + robotAngle) + robotPosition['Y']
             path = pathToObstacle(self.getGridPosition(robotPosition), self.getGridPosition(obstaclePos))
             self.HIMMUpdate(path, robotPosition)
 
@@ -91,15 +95,28 @@ class Cartographer:
         :param path: a list of pairs, starting from the robot's position
         :param robot: Robot object
         """
+        GROMask = [[0.5, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 0.5, 0.5]]
         for (x, y) in path:
             realPos = self.getRealPosition((x, y))
             distanceToRobot = getDistance(robotPosition, realPos)
             # Do not update beyond the LASER_MAX distance
-            if not self.isOutOfBound((x, y)) and distanceToRobot < self.LASER_MAX:
+            if not self.isOutOfBound((x, y)) and distanceToRobot < self.LASER_MAX_DISTANCE:
                 if (x, y) == path[-1]:
                     self.map[x][y] = min(self.MAXVALUE, self.map[x][y] + 3)
+                    # Computation of the growth operator
+                    sum = 0
+                    for i in range(-1, 2):
+                        for j in range(-1, 2):
+                            neighborRow, neighborCol = x + i, y + j
+                            if not self.isOutOfBound((neighborRow, neighborCol)):
+                                sum += self.map[neighborRow][neighborCol] * GROMask[1 + i][1 + j]
+                    self.map[x][y] = min(self.MAXVALUE, sum)
                 else:
                     self.map[x][y] = max(self.MINVALUE, self.map[x][y] - 1)
+
+
+
+
 
     def getMap(self):
         return self.map
@@ -109,9 +126,9 @@ class Cartographer:
         :param coord: a quaternion
         :return: the grid's square (pair) corresponding to coord
         """
-        col = floor((coord['X'] - self.xMin) / self.CELL_SIZE)
-        row = floor((coord['Y'] - self.yMin) / self.CELL_SIZE)
-        return (row, col)
+        row = floor((coord['X'] - self.xMin) / self.CELL_SIZE)
+        col = floor((coord['Y'] - self.yMin) / self.CELL_SIZE)
+        return row, col
 
     def getRealPosition(self, square):
         """
@@ -144,15 +161,15 @@ class Cartographer:
         :param square: a pair
         :return: True iff square belongs to the border
         """
-        if self.getState(square) == self.UNKNOWN:
+        if self.isOutOfBound(square) or self.getState(square) == self.UNKNOWN:
             return False
         for (i, j) in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                 neighbor = (square[0] + i, square[1] + j)
-                if self.getState(neighbor) == self.UNKNOWN and not self.isOutOfBound(neighbor):
+                if not self.isOutOfBound(neighbor) and self.getState(neighbor) == self.UNKNOWN:
                     return True
         return False
 
-    def findBorderSquare(self, square, acc=set()):
+    def findBorderSquare2(self, square, acc=set()):
         """
         Runs until a square belonging to the border between known/unknown is found
         :param square: a pair
@@ -169,6 +186,13 @@ class Cartographer:
                     borderSquare = self.findBorderSquare(neighbor, acc)
                     if borderSquare:
                         return borderSquare
+        return None
+
+    def findBorderSquare(self, square):
+        for i in range(len(self.map)):
+            for j in range(len(self.map)):
+                if self.isOnBorder((i, j)) and self.getState((i, j)) != self.OCCUPIED:
+                    return (i, j)
         return None
 
     def findBorder(self, square):

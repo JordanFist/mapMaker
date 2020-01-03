@@ -1,3 +1,5 @@
+from Computations import getDistance
+
 class Navigator:
     """
     This class represents the navigator : its goal is to find a path from the robot to the given destination
@@ -6,6 +8,7 @@ class Navigator:
     def __init__(self, controller, cartographer):
         self.cartographer = cartographer
         self.controller = controller
+        self.TOLERANCE = 5
 
     def computePath(self, robot, dest):
         """
@@ -88,7 +91,16 @@ class Navigator:
             newPath.append(self.cartographer.getRealPosition(square))
         return newPath
 
+    def reachedDestination(self, robot, dest):
+        return getDistance(robot.getPosition(), self.cartographer.getRealPosition(dest)) < self.TOLERANCE
+
     def followThePath(self, robot, dest):
-        path = self.computePath(robot, dest)
-        path = self.convertPath(path)
-        self.controller.move(robot, path)
+        while not self.reachedDestination(robot, dest) \
+                and self.cartographer.getState(dest) != self.cartographer.OCCUPIED:
+            path = self.computePath(robot, dest)
+            if not path:
+                break
+            path = self.convertPath(path)
+            path = path[:6]
+            if not self.controller.move(robot, path):
+                self.controller.wander(robot)

@@ -24,6 +24,10 @@ class ShowMap(object):
         if not showGUI:
             matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+        self.green_points = []
+        self.blue_points = []
+        self.yellow_points = []
+
         self.saveMapTime = 5.0
         self.mapName = 'map.png'
         self.first = True
@@ -56,6 +60,9 @@ class ShowMap(object):
 
     def getImage(self):
         return self.__image
+
+    def setRemarkablePoints(self, points):
+        self.points = points
 
     def updateMap(self, grid, maxValue, robot_row, robot_col):
         """
@@ -94,6 +101,14 @@ class ShowMap(object):
 
         # plot the robot pose
         self.__ax.plot((robot_col), (robot_row), 'rs', markersize=self.__robot_size)
+
+        # plot remarkable points
+        for point in self.green_points:
+            self.__ax.plot(point[1], point[0], 'gs', markersize=self.__robot_size)
+        for point in self.blue_points:
+            self.__ax.plot(point[1], point[0], 'bs', markersize=self.__robot_size)
+        for point in self.yellow_points:
+            self.__ax.plot(point[1], point[0], 'ys', markersize=self.__robot_size)
 
         # draw new figure
         self.__fig.canvas.draw()

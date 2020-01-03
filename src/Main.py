@@ -1,10 +1,10 @@
-from robot import Robot
 from Cartographer import Cartographer
 from PlanningModule import PlanningModule
 from Navigator import Navigator
 from Controller import Controller
 from show_map import ShowMap
 from robot import Robot
+
 
 def main():
     robot = Robot()

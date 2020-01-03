@@ -27,7 +27,7 @@ def getRadius(A, B, U):
     t = ((B['X'] - A['X'])**2 + (B['Y'] - A['Y'])**2) / (2 * (U['Y'] * (B ['X'] - A['X']) - U['X'] * (B ['Y'] - A['Y'])))
     xc = A['X'] + t * U['Y']
     yc = A['Y'] - t * U['X']
-    return sqrt((A['X'] - xc) ** 2 + (A['Y'] - yc)**2)  
+    return sqrt((A['X'] - xc)**2 + (A['Y'] - yc)**2)
    
 def getDistance(A, B):
     return sqrt((A['X'] - B['X'])**2 + (A['Y'] - B['Y'])**2)
@@ -51,7 +51,6 @@ def getLineCircleIntersection(C, radius, A, B):
         c = -radius * radius + C['X'] * C['X'] + (A['Y'] - C['Y']) ** 2 + A['X'] * A['X'] * m * m - 2 * m * A['X'] * (
                     A['Y'] - C['Y'])
         delta = b * b - 4 * a * c
-        print(delta)
         x1 = (-b + sqrt(delta)) / (2 * a)
         x2 = (-b - sqrt(delta)) / (2 * a)
         y1 = m * (x1 - A['X']) + A['Y']

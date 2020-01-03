@@ -1,4 +1,6 @@
 from math import sqrt
+from random import choice
+
 
 class PlanningModule:
     """
@@ -11,6 +13,7 @@ class PlanningModule:
         self.navigator = navigator
         self.controller = controller
         self.oldDestination = None
+        self.attempt = 0
     
     @staticmethod
     def getDistanceSquares(s, t):
@@ -24,6 +27,8 @@ class PlanningModule:
         :return: the new destination
         """
         borders = self.getBorders(robot)
+        if not borders:
+            return None
         robotPosition = self.cartographer.getGridPosition(robot.getPosition())
         # Compute the centroid of each border
         centroids = []
@@ -33,20 +38,24 @@ class PlanningModule:
                 xSum += square[0]
                 ySum += square[1]
             centroids.append((xSum // len(border), ySum // len(border)))
+
+        #self.cartographer.showMap.yellow_points = centroids
+
         # Pick the closest centroid to the robot
         closestCentroid = centroids[0]
         for centroid in centroids:
-            if self.getDistanceSquares(closestCentroid, robotPosition) < self.getDistanceSquares(centroid, robotPosition):
-                closestCentroid = centroid
+            if self.getDistanceSquares(centroid, robotPosition) < self.getDistanceSquares(closestCentroid, robotPosition):
+                if self.cartographer.getState(centroid) != self.cartographer.OCCUPIED:
+                    closestCentroid = centroid
+        # if self.cartographer.getState(closestCentroid) == self.cartographer.OCCUPIED:
+        #     return self.oldDestination
         return closestCentroid
 
     def EndInBorders(self, end, borders):
         """
-        If one of the ends' square belongs to a non visited border, returns it
-        Otherwise returns None
         :param end: a square
         :param borders: a list of borders
-        :return: a square if not in borders otherwise None
+        :return: True iff end is in one of the borders
         """
         for border in borders:
             if end in border:
@@ -65,6 +74,9 @@ class PlanningModule:
         toVisit = []
 
         borderSquare = self.cartographer.findBorderSquare(self.cartographer.getGridPosition(robot.getPosition()))
+        if not borderSquare:
+            print("pas de border square")
+            return []
         border, ends = self.cartographer.findBorder(borderSquare)
         if self.cartographer.getState(border[0]) == self.cartographer.EMPTY:
             emptyBorders.append(border)
@@ -84,13 +96,31 @@ class PlanningModule:
                     emptyBorders.append(border)
                 else:
                     occupiedBorders.append(border)
+        self.cartographer.showMap.blue_points = []
+        self.cartographer.showMap.green_points = []
+        for border in emptyBorders:
+            self.cartographer.showMap.green_points += border
+        for border in occupiedBorders:
+            self.cartographer.showMap.blue_points += border
         return emptyBorders
 
     def move(self, robot):
         destination = self.pickDestination(robot)
-        print(destination)
-        if destination == self.oldDestination:
+        if not destination:
             return False
-        self.navigator.followThePath(robot, destination)
-        self.oldDestination = destination
+        self.cartographer.showMap.yellow_points = [destination]
+        # if destination == self.oldDestination:
+        if destination == self.oldDestination:
+            print("same destination")
+            self.attempt += 1
+            if self.attempt == 3:
+                self.cartographer.map[destination[0]][destination[1]] = 15
+                self.attempt = 0
+        else:
+            self.attempt = 0
+        if self.navigator.reachedDestination(robot, destination):
+            self.controller.wander(robot)
+        else:
+            self.navigator.followThePath(robot, destination)
+            self.oldDestination = destination
         return True
