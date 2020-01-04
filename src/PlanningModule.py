@@ -11,6 +11,7 @@ class PlanningModule:
         self.cartographer = cartographer
         self.navigator = navigator
         self.controller = controller
+        self.MIN_BORDER_SIZE = 3
     
     @staticmethod
     def getDistanceSquares(s, t):
@@ -44,7 +45,8 @@ class PlanningModule:
         robotPosition = self.cartographer.getGridPosition(robot.getPosition())
         medians = []
         for border in borders:
-            medians.append(self.getMedian(border))
+            if len(border) > self.MIN_BORDER_SIZE:
+                medians.append(self.getMedian(border))
         # Pick the closest median to the robot that is not an obstacle
         closestMedian = self.getNonObstacle(medians)
         if not closestMedian:

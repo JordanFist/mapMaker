@@ -20,6 +20,8 @@ class Navigator:
         :return: a list of neighboring squares (Von Neumann), robot position not included
         """
         wave = self.wave(robot, dest)
+        if not wave:
+            return None
         path = self.findPath(len(wave), wave, [dest])
         # If no path is found
         if not path:
@@ -80,6 +82,8 @@ class Navigator:
             nextLayer = self.cartographer.getNextLayer(nextLayer, inside)
             # remove redundant elements
             nextLayer = list(set(nextLayer))
+        if not nextLayer:
+            return None
         return wave
 
     def convertPath(self, path):
@@ -109,7 +113,7 @@ class Navigator:
         :param dest: square to reach
         """
         if attempt >= self.MAX_ATTEMPT:
-            self.cartographer.map[dest[0]][dest[1]] = 15
+            self.cartographer.map[dest[0]][dest[1]] = self.cartographer.MAXVALUE
             return
         # If the robot has already reached the destination, a new destination needs to be computed
         if self.reachedDestination(robot, dest):
@@ -118,7 +122,7 @@ class Navigator:
 
         path = self.computePath(robot, dest)
         if not path:
-            self.cartographer.map[dest[0]][dest[1]] = 15
+            self.cartographer.map[dest[0]][dest[1]] = self.cartographer.MAXVALUE
             self.controller.wander(robot)
             return
         path = self.convertPath(path)

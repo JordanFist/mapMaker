@@ -2,11 +2,12 @@ from Cartographer import Cartographer
 from PlanningModule import PlanningModule
 from Navigator import Navigator
 from Controller import Controller
-from show_map import ShowMap
 from robot import Robot
+from time import time
 
 
 def main():
+    startTime = time()
     robot = Robot()
     cartographer = Cartographer(-20, 20, -20, 20, True)
     cartographer.update(robot)
@@ -17,6 +18,7 @@ def main():
         if not planningModule.move(robot):
             break
     cartographer.showMap.close()
+    print("time: ", time() - startTime)
 
 if __name__ == "__main__":
     main()

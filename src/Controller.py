@@ -1,6 +1,6 @@
 from robot import Robot
 from Computations import *
-from math import pi
+from math import pi, atan2
 from numpy import sign
 from random import random
 import time
@@ -17,9 +17,9 @@ class Controller:
         self.alpha = 0
         self.v = 1
         # lookahead distance
-        self.L = 4
+        self.L = 2
         self.offset = 0
-        self.DISTANCE_UPDATE = 4
+        self.DISTANCE_UPDATE = 6
         self.distanceTravelled = 0
         self.LASER_ANGLE = 8
         self.OBSTACLE_MAX_DIST = 2
@@ -32,6 +32,16 @@ class Controller:
         If an obstacle is encountered, the robot is stopped
         :return:
         """
+        # pos = self.cartographer.getGridPosition(robot.getPosition())
+        # heading = robot.getHeading()
+        # angle = atan2(heading["Y"], heading["X"])
+        # neighbors = [(-2, 0), (-2, -2), (0, -2), (2, -2), (2, 0), (2, 2), (0, 2), (-2, 2)]
+        # index = (round(angle * 4 / pi) + 4) % 8
+        # headingSquare = pos[0] + neighbors[index][0], pos[1] + neighbors[index][1]
+        # if not self.cartographer.isOutOfBound(headingSquare) \
+        #         and self.cartographer.getState(headingSquare) == self.cartographer.OCCUPIED:
+        #     robot.setMotion(0, 0)
+        #     return True
         lasers = robot.getLaser()
         for i in range(len(lasers['Echoes']) // 2 - self.LASER_ANGLE,
                        len(lasers['Echoes']) // 2 + self.LASER_ANGLE):
@@ -117,6 +127,8 @@ class Controller:
         while run:
             robot.setMotion(0, 2 * pi * random())
             time.sleep(1)
+            robot.setMotion(0, 0)
+            self.cartographer.update(robot)
             if not self.checkObstacle(robot):
                 run = False
                 for _ in range(self.WANDERING_DISTANCE):
@@ -124,6 +136,5 @@ class Controller:
                     time.sleep(0.5)
                     robot.setMotion(0, 0)
                     self.checkDistanceTravelled(robot, self.OBSTACLE_MAX_DIST)
-                    robotPos = self.cartographer.getGridPosition(robot.getPosition())
-                    if self.checkObstacle(robot) or self.cartographer.isOutOfBound(robotPos):
+                    if self.checkObstacle(robot):
                         break

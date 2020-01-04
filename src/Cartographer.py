@@ -11,7 +11,7 @@ class Cartographer:
     """
 
     def __init__(self, xMin, xMax, yMin, yMax, showGUI):
-        self.CELL_SIZE = 0.4
+        self.CELL_SIZE = 0.3
         self.EMPTY = 0
         self.OCCUPIED = 1
         self.UNKNOWN = -1
@@ -21,6 +21,7 @@ class Cartographer:
         self.OCCUPIED_THRESHOLD = 7
         self.LASER_MAX_DISTANCE = 10
         self.LASER_MAX_ANGLE = 50
+        self.ROBOT_WIDTH = 0.8
 
         self.xMin = xMin
         self.xMax = xMax
@@ -61,12 +62,43 @@ class Cartographer:
         else:
             return self.UNKNOWN
 
+    def getSquaresInCircle(self, center, radius):
+        squares = set()
+        toProcess = [self.getGridPosition(center)]
+        while len(toProcess) > 0:
+            square = toProcess.pop()
+            pos = self.getRealPosition(square)
+            if getDistance(pos, center) < radius:
+                squares.add(square)
+                for i in range(-1, 2):
+                    for j in range(-1, 2):
+                        neighbor = square[0] + i, square[1] + j
+                        if neighbor not in squares and not self.isOutOfBound(neighbor):
+                            toProcess.append(neighbor)
+        return squares
+
+    def increaseThickness(self, robot):
+        squares = self.getSquaresInCircle(robot.getPosition(), self.LASER_MAX_DISTANCE)
+        while len(squares) > 0:
+            square = squares.pop()
+            if self.getState(square) == self.OCCUPIED:
+                neighbors = self.getSquaresInCircle(self.getRealPosition(square), self.ROBOT_WIDTH)
+                squares -= neighbors
+                for neighbor in neighbors:
+                    if self.getState(neighbor) == self.OCCUPIED:
+                        path = pathToObstacle(square, neighbor)
+                        for (row, col) in path:
+                            self.map[row][col] = min(self.MAXVALUE, self.map[row][col] + 3)
+
     def update(self, robot):
         """
         Updates the map representation
         :param robot: Robot object
         """
+        if self.isOutOfBound(self.getGridPosition(robot.getPosition())):
+            return
         self.handleLasers(robot)
+        self.increaseThickness(robot)
         row, col = self.getGridPosition(robot.getPosition())
         self.showMap.updateMap(self.map, self.MAXVALUE, row, col)
 
@@ -112,6 +144,8 @@ class Cartographer:
                             neighborRow, neighborCol = x + i, y + j
                             if not self.isOutOfBound((neighborRow, neighborCol)):
                                 sum += self.map[neighborRow][neighborCol] * GROMask[1 + i][1 + j]
+                                # Increase thickness of obstacles
+                                # self.map[neighborRow][neighborCol] = min(self.MAXVALUE, self.map[neighborRow][neighborCol] + 3)
                     self.map[x][y] = min(self.MAXVALUE, sum)
                 else:
                     self.map[x][y] = max(self.MINVALUE, self.map[x][y] - 1)
