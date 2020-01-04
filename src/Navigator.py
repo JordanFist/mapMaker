@@ -10,6 +10,7 @@ class Navigator:
         self.controller = controller
         self.TOLERANCE = 2
         self.SEGMENT_LENGTH = 40
+        self.MAX_ATTEMPT = 2
 
     def computePath(self, robot, dest):
         """
@@ -101,24 +102,25 @@ class Navigator:
         """
         return getDistance(robot.getPosition(), self.cartographer.getRealPosition(dest)) < self.TOLERANCE
 
-    def followThePath(self, robot, dest):
+    def followThePath(self, robot, dest, attempt=0):
         """
         Compute a path between the robot and the destination and make sure the robot reach it
         :param robot: Robot object
         :param dest: square to reach
         """
+        if attempt >= self.MAX_ATTEMPT:
+            self.cartographer.map[dest[0]][dest[1]] = 15
+            return
         # If the robot has already reached the destination, a new destination needs to be computed
         if self.reachedDestination(robot, dest):
-            print("reached")
             self.controller.wander(robot)
             return
 
         path = self.computePath(robot, dest)
         if not path:
-            print("no path")
+            self.cartographer.map[dest[0]][dest[1]] = 15
             self.controller.wander(robot)
             return
-        self.cartographer.showMap.blue_points = path
         path = self.convertPath(path)
 
         offset = 0
@@ -133,4 +135,4 @@ class Navigator:
             offset += self.SEGMENT_LENGTH
             if not self.controller.move(robot, path):
                 self.controller.wander(robot)
-                self.followThePath(robot, dest)
+                self.followThePath(robot, dest, attempt + 1)

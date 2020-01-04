@@ -16,6 +16,21 @@ class PlanningModule:
     def getDistanceSquares(s, t):
         return sqrt((s[0] - t[0]) ** 2 + (s[1] - t[1]) ** 2)
 
+    @staticmethod
+    def getMedian(border):
+        rows = [square[0] for square in border]
+        cols = [square[1] for square in border]
+        rows.sort()
+        cols.sort()
+        middle = int(len(border) / 2)
+        return (rows[middle], cols[middle])
+
+    def getNonObstacle(self, squares):
+        for square in squares:
+            if self.cartographer.getState(square) != self.cartographer.OCCUPIED:
+                return square
+        return None
+
     def pickDestination(self, robot):
         """
         Choose a new destination, using the frontier based exploration algorithm
@@ -27,23 +42,19 @@ class PlanningModule:
         if not borders:
             return None
         robotPosition = self.cartographer.getGridPosition(robot.getPosition())
-        # Compute the centroid of each border
-        centroids = []
+        medians = []
         for border in borders:
-            xSum = ySum = 0
-            for square in border:
-                xSum += square[0]
-                ySum += square[1]
-            centroids.append((xSum // len(border), ySum // len(border)))
-        self.cartographer.showMap.yellow_points = centroids
-        # Pick the closest centroid to the robot that is not an obstacle
-        closestCentroid = centroids[0]
-        for centroid in centroids:
-            dist = self.getDistanceSquares(centroid, robotPosition)
-            if dist < self.getDistanceSquares(closestCentroid, robotPosition) \
-                    and self.cartographer.getState(centroid) != self.cartographer.OCCUPIED:
-                    closestCentroid = centroid
-        return closestCentroid
+            medians.append(self.getMedian(border))
+        # Pick the closest median to the robot that is not an obstacle
+        closestMedian = self.getNonObstacle(medians)
+        if not closestMedian:
+            return None
+        for median in medians:
+            dist = self.getDistanceSquares(median, robotPosition)
+            if dist < self.getDistanceSquares(closestMedian, robotPosition) \
+                    and self.cartographer.getState(median) != self.cartographer.OCCUPIED:
+                    closestMedian = median
+        return closestMedian
 
     def EndInBorders(self, end, borders):
         """
@@ -84,7 +95,6 @@ class PlanningModule:
                             alreadyVisited += border
                         else:
                             occupiedBorders.append(border)
-        self.cartographer.showMap.green_points = alreadyVisited
         return emptyBorders
 
     def move(self, robot):

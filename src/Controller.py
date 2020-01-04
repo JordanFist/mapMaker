@@ -19,11 +19,11 @@ class Controller:
         # lookahead distance
         self.L = 4
         self.offset = 0
-        self.DISTANCE_UPDATE = 2
+        self.DISTANCE_UPDATE = 4
         self.distanceTravelled = 0
-        self.LASER_ANGLE = 5
+        self.LASER_ANGLE = 8
         self.OBSTACLE_MAX_DIST = 2
-        self.WANDERING_DISTANCE = 6
+        self.WANDERING_DISTANCE = 8
 
         self.cartographer = cartographer
 
@@ -85,7 +85,6 @@ class Controller:
         :param path: list of quaternion
         :return False iff something went wrong (an obstacle was on the way)
         """
-        print("follow path")
         self.orientToward(robot, path[0])
         self.offset = 0
         nextPoint = self.getNextPoint(robot, path)
@@ -114,7 +113,6 @@ class Controller:
         Random behaviour, avoiding obstacles
         :param robot: Robot object
         """
-        print("wandering")
         run = True
         while run:
             robot.setMotion(0, 2 * pi * random())

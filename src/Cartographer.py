@@ -17,10 +17,10 @@ class Cartographer:
         self.UNKNOWN = -1
         self.MAXVALUE = 15
         self.MINVALUE = 0
-        self.EMPTY_THRESHOLD = 6
-        self.OCCUPIED_THRESHOLD = 8
-        self.LASER_MAX_DISTANCE = 8
-        self.LASER_MAX_ANGLE = 30
+        self.EMPTY_THRESHOLD = 7
+        self.OCCUPIED_THRESHOLD = 7
+        self.LASER_MAX_DISTANCE = 10
+        self.LASER_MAX_ANGLE = 50
 
         self.xMin = xMin
         self.xMax = xMax

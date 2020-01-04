@@ -102,14 +102,6 @@ class ShowMap(object):
         # plot the robot pose
         self.__ax.plot((robot_col), (robot_row), 'rs', markersize=self.__robot_size)
 
-        # plot remarkable points
-        for point in self.green_points:
-            self.__ax.plot(point[1], point[0], 'gs', markersize=2)
-        for point in self.blue_points:
-            self.__ax.plot(point[1], point[0], 'bs', markersize=2)
-        for point in self.yellow_points:
-            self.__ax.plot(point[1], point[0], 'ys', markersize=2)
-
         # draw new figure
         self.__fig.canvas.draw()
 
