@@ -81,8 +81,8 @@ class PlanningModule:
         toVisit = []
         alreadyVisited = []
 
-        for row in range(self.cartographer.getHeight()):
-            for col in range(self.cartographer.getWidth()):
+        for row in range(self.cartographer.getWidth()):
+            for col in range(self.cartographer.getHeight()):
                 if self.cartographer.isOnBorder((row, col)) and not (row, col) in alreadyVisited \
                         and self.cartographer.getState((row, col)) != self.cartographer.OCCUPIED:
                     toVisit.append((row, col))

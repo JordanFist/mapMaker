@@ -27,8 +27,8 @@ class Cartographer:
         self.xMax = xMax
         self.yMin = yMin
         self.yMax = yMax
-        self.showMap = ShowMap(self.getHeight(), self.getWidth(), showGUI)
-        self.map = np.ones((self.getHeight(), self.getWidth())) * (self.MAXVALUE + self.MINVALUE) // 2
+        self.showMap = ShowMap(self.getWidth(), self.getHeight(), showGUI)
+        self.map = np.ones((self.getWidth(), self.getHeight())) * (self.MAXVALUE + self.MINVALUE) // 2
 
     def getHeight(self):
         """
@@ -47,7 +47,7 @@ class Cartographer:
         :param square: a pair
         :return: True iff the given square is outside the grid's limits
         """
-        return not (0 <= square[0] < self.getHeight() and 0 <= square[1] < self.getWidth())
+        return not (0 <= square[0] < self.getWidth() and 0 <= square[1] < self.getHeight())
 
     def getState(self, square):
         """

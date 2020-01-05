@@ -24,9 +24,6 @@ class ShowMap(object):
         if not showGUI:
             matplotlib.use('Agg')
         import matplotlib.pyplot as plt
-        self.green_points = []
-        self.blue_points = []
-        self.yellow_points = []
 
         self.saveMapTime = 5.0
         self.mapName = 'map.png'
@@ -57,12 +54,6 @@ class ShowMap(object):
 
         saveMap(self.__fig, self.mapName)
         self.start_time = time.time()
-
-    def getImage(self):
-        return self.__image
-
-    def setRemarkablePoints(self, points):
-        self.points = points
 
     def updateMap(self, grid, maxValue, robot_row, robot_col):
         """

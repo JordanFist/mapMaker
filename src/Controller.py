@@ -113,6 +113,7 @@ class Controller:
         Random behaviour, avoiding obstacles
         :param robot: Robot object
         """
+        self.cartographer.update(robot)
         run = True
         while run:
             robot.setMotion(0, 2 * pi * random())
