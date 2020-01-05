@@ -32,16 +32,6 @@ class Controller:
         If an obstacle is encountered, the robot is stopped
         :return:
         """
-        # pos = self.cartographer.getGridPosition(robot.getPosition())
-        # heading = robot.getHeading()
-        # angle = atan2(heading["Y"], heading["X"])
-        # neighbors = [(-2, 0), (-2, -2), (0, -2), (2, -2), (2, 0), (2, 2), (0, 2), (-2, 2)]
-        # index = (round(angle * 4 / pi) + 4) % 8
-        # headingSquare = pos[0] + neighbors[index][0], pos[1] + neighbors[index][1]
-        # if not self.cartographer.isOutOfBound(headingSquare) \
-        #         and self.cartographer.getState(headingSquare) == self.cartographer.OCCUPIED:
-        #     robot.setMotion(0, 0)
-        #     return True
         lasers = robot.getLaser()
         for i in range(len(lasers['Echoes']) // 2 - self.LASER_ANGLE,
                        len(lasers['Echoes']) // 2 + self.LASER_ANGLE):

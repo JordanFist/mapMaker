@@ -3,13 +3,13 @@ from PlanningModule import PlanningModule
 from Navigator import Navigator
 from Controller import Controller
 from robot import Robot
-from time import time
+from sys import argv
 
 
 def main():
-    startTime = time()
-    robot = Robot()
-    cartographer = Cartographer(-20, 20, -20, 20, True)
+    url, x1, y1, x2, y2, showGUI = argv
+    robot = Robot(url)
+    cartographer = Cartographer(int(x1), int(x2), int(y1), int(y2), int(showGUI))
     cartographer.update(robot)
     controller = Controller(cartographer)
     navigator = Navigator(controller, cartographer)
@@ -18,7 +18,6 @@ def main():
         if not planningModule.move(robot):
             break
     cartographer.showMap.close()
-    print("time: ", time() - startTime)
 
 if __name__ == "__main__":
     main()
